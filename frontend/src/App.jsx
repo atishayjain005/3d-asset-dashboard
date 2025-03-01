@@ -3,7 +3,8 @@ import Dashboard from "./components/Dashboard";
 import ThreeDViewer from "./components/ThreeDViewer";
 import EditAssetModal from "./components/EditAssetModal";
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL =
+  "https://3d-asset-dashboard-ugql.vercel.app/" || "http://localhost:8080";
 
 function App() {
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -22,18 +23,18 @@ function App() {
         setIsSyncing(true);
       }
       setError(null);
-      
+
       const response = await fetch(`${API_BASE_URL}/assets`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setAssets(data);
     } catch (err) {
-      console.error('Failed to fetch assets:', err);
-      setError('Failed to load assets. Please try again later.');
+      console.error("Failed to fetch assets:", err);
+      setError("Failed to load assets. Please try again later.");
     } finally {
       if (showLoading) {
         setIsLoading(false);
@@ -53,13 +54,11 @@ function App() {
 
   // Update the asset list when an asset is edited
   const updateAsset = (updatedAsset) => {
-    setAssets(prev =>
-      prev.map(asset =>
-        asset.id === updatedAsset.id ? updatedAsset : asset
-      )
+    setAssets((prev) =>
+      prev.map((asset) => (asset.id === updatedAsset.id ? updatedAsset : asset))
     );
     setEditAsset(null);
-    
+
     // Sync with server in background
     syncAssets();
   };
@@ -102,10 +101,7 @@ function App() {
             isSyncing={isSyncing}
           />
           {selectedAsset && (
-            <ThreeDViewer
-              asset={selectedAsset}
-              onClose={handleClosePreview}
-            />
+            <ThreeDViewer asset={selectedAsset} onClose={handleClosePreview} />
           )}
           {editAsset && (
             <EditAssetModal

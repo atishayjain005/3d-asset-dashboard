@@ -13,7 +13,8 @@ import {
 import { FaEye, FaEdit, FaTrash, FaTags } from "react-icons/fa";
 import { BiFile } from "react-icons/bi";
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL =
+  "https://3d-asset-dashboard-ugql.vercel.app/" || "http://localhost:8080";
 
 // Spinner component with customizable message
 const Spinner = ({ message = "Loading assets..." }) => (
@@ -23,7 +24,14 @@ const Spinner = ({ message = "Loading assets..." }) => (
   </div>
 );
 
-function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh }) {
+function Dashboard({
+  assets,
+  setAssets,
+  onPreview,
+  onEdit,
+  isLoading,
+  onRefresh,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     tags: [],
@@ -35,7 +43,9 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
   const [deleteLoading, setDeleteLoading] = useState(null);
 
   // Derive available tags and types from assets
-  const availableTags = [...new Set(assets.flatMap((asset) => asset.tags || []))].sort();
+  const availableTags = [
+    ...new Set(assets.flatMap((asset) => asset.tags || [])),
+  ].sort();
   const availableTypes = [...new Set(assets.map((asset) => asset.type))].sort();
 
   // Helper: Check if any filters are active
@@ -79,9 +89,9 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
   const filteredAssets = assets?.filter((asset) => {
     // Text search in name and tags
     const searchLower = searchTerm?.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       asset.name?.toLowerCase().includes(searchLower) ||
-      asset.tags?.some(tag => tag?.toLowerCase().includes(searchLower)) ||
+      asset.tags?.some((tag) => tag?.toLowerCase().includes(searchLower)) ||
       false;
 
     const matchesTags =
@@ -94,16 +104,16 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
     let matchesDate = true;
     if (filters.startDate || filters.endDate) {
       const assetDate = new Date(asset.uploaded_at || asset.uploadDate);
-      
+
       if (filters.startDate) {
-      const startDate = new Date(filters.startDate);
+        const startDate = new Date(filters.startDate);
         startDate.setHours(0, 0, 0, 0);
         if (assetDate < startDate) matchesDate = false;
-    }
+      }
 
       if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      endDate.setHours(23, 59, 59, 999);
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59, 999);
         if (assetDate > endDate) matchesDate = false;
       }
     }
@@ -113,20 +123,20 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
 
   const deleteAsset = async (id) => {
     if (!window.confirm("Are you sure you want to delete this asset?")) return;
-    
+
     try {
       setDeleteLoading(id);
-      const response = await fetch(`${API_BASE_URL}/assets/${id}`, { 
+      const response = await fetch(`${API_BASE_URL}/assets/${id}`, {
         method: "DELETE",
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       setAssets((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       console.error("Delete failed:", err);
@@ -139,31 +149,31 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
   // Format date for display with proper timezone handling
   const formatDate = (dateString) => {
     try {
-      if (!dateString) return 'No date available';
-      
-    const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Invalid date';
-      
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
+      if (!dateString) return "No date available";
+
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Invalid date";
+
+      return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
       }).format(date);
     } catch (error) {
-      console.error('Date formatting error:', error, dateString);
-      return 'Invalid date';
+      console.error("Date formatting error:", error, dateString);
+      return "Invalid date";
     }
   };
 
   // Format file size
   const formatFileSize = (bytes) => {
-    if (!bytes && bytes !== 0) return 'Unknown size';
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes && bytes !== 0) return "Unknown size";
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
@@ -218,7 +228,9 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
               Filters
               {hasActiveFilters && (
                 <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-sm">
-                  {filters.tags.length + filters.types.length + (filters.startDate || filters.endDate ? 1 : 0)}
+                  {filters.tags.length +
+                    filters.types.length +
+                    (filters.startDate || filters.endDate ? 1 : 0)}
                 </span>
               )}
               <FiChevronDown
@@ -237,12 +249,12 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
                   Filter Assets
                 </h3>
                 {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
+                  <button
+                    onClick={clearFilters}
                     className="text-sm text-gray-400 hover:text-white flex items-center px-3 py-1.5 rounded-md hover:bg-[#333333] transition-colors"
-                >
+                  >
                     <FiX className="mr-1.5" /> Clear all filters
-                </button>
+                  </button>
                 )}
               </div>
 
@@ -346,15 +358,15 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
           {!isLoading && (
             <div className="mb-6 text-sm text-gray-400 flex items-center">
               <span className="bg-[#333333] px-3 py-1.5 rounded-full mr-2 font-medium">
-              Showing {filteredAssets.length} of {assets.length} assets
-            </span>
-            {hasActiveFilters && (
+                Showing {filteredAssets.length} of {assets.length} assets
+              </span>
+              {hasActiveFilters && (
                 <span className="text-[#646cff] flex items-center">
                   <FiFilter className="mr-1.5" />
                   Filtered results
                 </span>
-            )}
-          </div>
+              )}
+            </div>
           )}
 
           {/* Loading State */}
@@ -384,13 +396,18 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
                   className="group bg-[#1a1a1a] rounded-lg overflow-hidden border border-[#333333] hover:border-[#444444] transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-black/30"
                 >
                   <div className="relative">
-                    {asset.type && ['glb', 'gltf', 'fbx', 'obj'].includes(asset.type.toLowerCase()) ? (
-                      <Suspense fallback={
-                        <div className="w-full h-32 bg-[#242424] rounded-t-lg overflow-hidden flex items-center justify-center">
-                          <div className="w-6 h-6 border-2 border-[#646cff] border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      }>
-                        <ThreeDViewer 
+                    {asset.type &&
+                    ["glb", "gltf", "fbx", "obj"].includes(
+                      asset.type.toLowerCase()
+                    ) ? (
+                      <Suspense
+                        fallback={
+                          <div className="w-full h-32 bg-[#242424] rounded-t-lg overflow-hidden flex items-center justify-center">
+                            <div className="w-6 h-6 border-2 border-[#646cff] border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        }
+                      >
+                        <ThreeDViewer
                           asset={asset}
                           isThumbnail={true}
                           showControls={false}
@@ -412,7 +429,7 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
                         {formatFileSize(asset.size)}
                       </span>
                     </div>
-                    
+
                     <h3 className="text-lg font-semibold text-white mb-2 truncate group-hover:text-[#646cff] transition-colors">
                       {asset.name}
                     </h3>
@@ -421,14 +438,17 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
                       <div className="text-xs text-gray-400 flex items-center">
                         <FiClock className="mr-1.5 text-[#646cff]" />
                         {formatDate(asset.uploaded_at || asset.uploadDate)}
-                    </div>
+                      </div>
 
-                      {(asset.created_at || asset.createdAt) && (asset.created_at || asset.createdAt) !== (asset.uploaded_at || asset.uploadDate) && (
-                        <div className="text-xs text-gray-400 flex items-center">
-                          <FiCalendar className="mr-1.5 text-[#646cff]" />
-                          Created: {formatDate(asset.created_at || asset.createdAt)}
-                        </div>
-                      )}
+                      {(asset.created_at || asset.createdAt) &&
+                        (asset.created_at || asset.createdAt) !==
+                          (asset.uploaded_at || asset.uploadDate) && (
+                          <div className="text-xs text-gray-400 flex items-center">
+                            <FiCalendar className="mr-1.5 text-[#646cff]" />
+                            Created:{" "}
+                            {formatDate(asset.created_at || asset.createdAt)}
+                          </div>
+                        )}
                     </div>
 
                     {asset.tags && asset.tags.length > 0 && (
@@ -487,16 +507,16 @@ function Dashboard({ assets, setAssets, onPreview, onEdit, isLoading, onRefresh 
               const assetWithDate = {
                 ...newAsset,
                 uploaded_at: now,
-                created_at: now
+                created_at: now,
               };
-              setAssets(prev => [assetWithDate, ...prev]);
-              
+              setAssets((prev) => [assetWithDate, ...prev]);
+
               // Sync with server in the background
-              onRefresh().catch(error => {
-                console.error('Failed to sync with server:', error);
+              onRefresh().catch((error) => {
+                console.error("Failed to sync with server:", error);
                 // If sync fails, keep the optimistic update
                 // The next refresh or page load will fix any inconsistencies
-                });
+              });
             }}
             disabled={isLoading}
           />
