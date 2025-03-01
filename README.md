@@ -29,14 +29,14 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
 
 - **Dashboard UI:**  
   - Modern, minimalistic interface with smooth transitions and responsive design.
-  - Grid view of assets with search and filter functionality.
-
+  - View, search, and filter uploaded 3D assets.
+  
 - **3D Model Preview:**  
   - Interactive 3D preview using react‑three‑fiber and Three.js with orbit controls.
 
 - **Asset Management:**  
   - Upload, edit (name and tags), and delete 3D assets.
-  - Metadata management using Supabase (PostgreSQL & Storage).
+  - Supabase integration for storing metadata (PostgreSQL) and files (Storage).
 
 ## Demo
 
@@ -45,22 +45,22 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
 
 ## Tech Stack
 
-- **Frontend:**  
+- **Frontend:**
   - [React](https://reactjs.org/)
   - [Vite](https://vitejs.dev/)
   - [Tailwind CSS](https://tailwindcss.com/)
   - [react‑three‑fiber](https://docs.pmnd.rs/react-three-fiber/getting-started/introduction) & [Three.js](https://threejs.org/)
 
-- **Backend:**  
+- **Backend:**
   - [Node.js](https://nodejs.org/)
   - [Express](https://expressjs.com/)
-  - [Multer](https://github.com/expressjs/multer) (for file uploads)
-  - [@supabase/supabase-js](https://supabase.com/docs/reference/javascript) (for Supabase integration)
+  - [Multer](https://github.com/expressjs/multer)
+  - [@supabase/supabase-js](https://supabase.com/docs/reference/javascript)
 
-- **Database & Storage:**  
-  - [Supabase](https://supabase.com/) (PostgreSQL & Storage)
+- **Database & Storage:**
+  - [Supabase](https://supabase.com/)
 
-- **Deployment:**  
+- **Deployment:**
   - [Vercel](https://vercel.com/)
 
 ## Setup
@@ -72,98 +72,107 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
    ```bash
    git clone https://github.com/atishayjain005/3d-asset-dashboard.git
    cd 3d-asset-dashboard/frontend
-Install dependencies:
+   ```
 
-bash
-Copy
-npm install
-Run the development server:
+2. **Install dependencies:**
 
-bash
-Copy
-npm run dev
-Backend Setup
-Navigate to the backend folder (ensure your Express app is inside an /api folder for Vercel):
+   ```bash
+   npm install
+   ```
 
-bash
-Copy
-cd ../backend
-Install dependencies:
+3. **Run the development server:**
 
-bash
-Copy
-npm install
-Create a .env file with the following variables:
+   ```bash
+   npm run dev
+   ```
 
-env
-Copy
+### Backend Setup
+
+1. **Navigate to the backend folder (ensure your Express app is inside an `/api` folder for Vercel):**
+
+   ```bash
+   cd 3d-asset-dashboard/backend
+   ```
+
+2. **Install dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Create a `.env` file** in the backend directory with the following variables:
+
+   ```env
+   PORT=8080
+   SUPABASE_URL="https://your-project-ref.supabase.co"
+   SUPABASE_SERVICE_KEY="your-supabase-service-key"
+   ```
+
+4. **For local development, run the backend:**
+
+   ```bash
+   npm run dev
+   ```
+
+## Environment Variables
+
+When deploying to Vercel, add these variables via the Vercel Dashboard:
+
+```env
 PORT=8080
 SUPABASE_URL="https://your-project-ref.supabase.co"
 SUPABASE_SERVICE_KEY="your-supabase-service-key"
-FRONTEND_URL="https://3d-asset-dashboard.vercel.app"
-For local development, run the backend:
+```
 
-bash
-Copy
-npm run dev
-Environment Variables
-Create a .env file (do not commit this file) in your backend directory with:
+## Deployment
 
-env
-Copy
-PORT=8080
-SUPABASE_URL="https://your-project-ref.supabase.co"
-SUPABASE_SERVICE_KEY="your-supabase-service-key"
-FRONTEND_URL="https://3d-asset-dashboard.vercel.app"
-When deploying to Vercel, add these variables via the Vercel Dashboard.
+### Deploying the Frontend
 
-Deployment
-Deploying the Frontend
-Push the frontend code to GitHub.
-In Vercel, import the repository (Vite will be auto-detected).
-Configure any required environment variables (if your frontend needs to know your backend API URL).
-Deploy the project.
-Deploying the Backend
-Ensure your backend code is in an api folder.
+1. **Push the frontend code to GitHub.**
+2. **Import the repository into Vercel.** Vercel will auto-detect the Vite project.
+3. **Configure any required environment variables** (if your frontend needs to know your backend API URL).
+4. **Deploy the project.**
 
-Create a vercel.json file in the project root with the following content:
+### Deploying the Backend
 
-json
-Copy
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.js"
-    }
-  ]
-}
-Push your backend code to GitHub.
+1. **Ensure your backend code is in an `/api` folder.**
+2. **Create a `vercel.json` file** in the project root with the following content:
 
-Import the backend project into Vercel.
+   ```json
+   {
+     "version": 2,
+     "builds": [
+       {
+         "src": "api/index.js",
+         "use": "@vercel/node"
+       }
+     ],
+     "routes": [
+       {
+         "src": "/(.*)",
+         "dest": "api/index.js"
+       }
+     ]
+   }
+   ```
 
-Add the environment variables in your Vercel project settings.
+3. **Push the backend code to GitHub.**
+4. **Import the backend project into Vercel.**
+5. **Add the environment variables** in the Vercel Dashboard.
+6. **Deploy the backend.**
 
-Deploy the backend.
+## Usage
 
-Note: Make sure the frontend fetches the API from the correct URL (avoid extra slashes).
+- **Dashboard:**  
+  Log in to the dashboard to view, search, and filter your uploaded 3D assets.
 
-Usage
-Dashboard:
-Log in to the dashboard to view, search, and filter your uploaded 3D assets.
+- **Uploading Assets:**  
+  Use the upload form to add new 3D models (GLB, FBX, OBJ). Metadata is stored in Supabase, and files are saved in Supabase Storage.
 
-Uploading Assets:
-Use the upload form to add new 3D models (GLB, FBX, OBJ). Metadata is stored in Supabase, and files are saved in Supabase Storage.
+- **Editing & Deleting:**  
+  Edit asset details (name and tags) or delete assets directly from the dashboard.
 
-Editing & Deleting:
-Edit asset details (name and tags) or delete assets directly from the dashboard.
+- **3D Preview:**  
+  Click on an asset to launch an interactive 3D preview with orbit controls.
 
-3D Preview:
-Click on an asset to launch an interactive 3D preview with orbit controls.
+
