@@ -34,7 +34,7 @@ function App() {
       setAssets(data);
     } catch (err) {
       console.error("Failed to fetch assets:", err);
-      setError("Failed to load assets. Please try again later.");
+      // setError("Failed to load assets. Please try again later.");
     } finally {
       if (showLoading) {
         setIsLoading(false);
