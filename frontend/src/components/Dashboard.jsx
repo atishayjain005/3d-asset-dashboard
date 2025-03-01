@@ -14,7 +14,7 @@ import { FaEye, FaEdit, FaTrash, FaTags } from "react-icons/fa";
 import { BiFile } from "react-icons/bi";
 
 const API_BASE_URL =
-  "https://3d-asset-dashboard-ugql.vercel.app/" || "http://localhost:8080";
+  "https://3d-asset-dashboard-ugql.vercel.app" || "http://localhost:8080";
 
 // Spinner component with customizable message
 const Spinner = ({ message = "Loading assets..." }) => (

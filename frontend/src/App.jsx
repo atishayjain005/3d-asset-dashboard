@@ -4,7 +4,7 @@ import ThreeDViewer from "./components/ThreeDViewer";
 import EditAssetModal from "./components/EditAssetModal";
 
 const API_BASE_URL =
-  "https://3d-asset-dashboard-ugql.vercel.app/" || "http://localhost:8080";
+  "https://3d-asset-dashboard-ugql.vercel.app" || "http://localhost:8080";
 
 function App() {
   const [selectedAsset, setSelectedAsset] = useState(null);
