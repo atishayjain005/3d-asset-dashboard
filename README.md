@@ -65,6 +65,11 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
 
 ## Setup
 
+### Prerequisites
+
+- Node.js 22 or newer for the backend Supabase client dependency tree.
+- A Supabase project with an `assets` table and a public storage bucket.
+
 ### Frontend Setup
 
 1. **Clone the repository and navigate to the frontend folder:**
@@ -86,6 +91,14 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
    npm run dev
    ```
 
+4. **Configure the API URL:**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Set `VITE_API_BASE_URL` to the backend URL. For local development, use `http://localhost:8080`.
+
 ### Backend Setup
 
 1. **Navigate to the backend folder (ensure your Express app is inside an `/api` folder for Vercel):**
@@ -104,8 +117,10 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
 
    ```env
    PORT=8080
+   FRONTEND_URL="http://localhost:5173"
    SUPABASE_URL="https://your-project-ref.supabase.co"
    SUPABASE_SERVICE_KEY="your-supabase-service-key"
+   SUPABASE_STORAGE_BUCKET="assets"
    ```
 
 4. **For local development, run the backend:**
@@ -120,8 +135,28 @@ When deploying to Vercel, add these variables via the Vercel Dashboard:
 
 ```env
 PORT=8080
+FRONTEND_URL="https://your-frontend-domain.vercel.app"
 SUPABASE_URL="https://your-project-ref.supabase.co"
 SUPABASE_SERVICE_KEY="your-supabase-service-key"
+SUPABASE_STORAGE_BUCKET="assets"
+```
+
+The backend also exposes `GET /health`, which reports whether Supabase credentials are configured. Asset routes return `503 SUPABASE_NOT_CONFIGURED` until the Supabase environment is present.
+
+## Validation
+
+Run these checks before opening a pull request:
+
+```bash
+cd backend
+npm test
+node --check api/index.js
+npm audit --audit-level=high
+
+cd ../frontend
+npm run lint
+npm run build
+npm audit --audit-level=high
 ```
 
 ## Deployment
@@ -175,4 +210,7 @@ SUPABASE_SERVICE_KEY="your-supabase-service-key"
 - **3D Preview:**  
   Click on an asset to launch an interactive 3D preview with orbit controls.
 
+## Project Notes
+
+See [`docs/improvement-log.md`](docs/improvement-log.md) for the current hardening record, validation history, and follow-up backlog.
 
