@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 function UploadForm({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
@@ -26,7 +27,7 @@ function UploadForm({ onUploadSuccess }) {
     formData.append('tags', tags);
 
     try {
-      await axios.post('/assets', formData, {
+      const { data: uploadedAsset } = await axios.post(apiUrl('/assets'), formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: event => {
           const percent = Math.round((event.loaded * 100) / event.total);
@@ -38,7 +39,7 @@ function UploadForm({ onUploadSuccess }) {
       setFile(null);
       setName('');
       setTags('');
-      onUploadSuccess();
+      onUploadSuccess(uploadedAsset);
     } catch (err) {
       console.error('Upload failed:', err);
       setIsUploading(false);

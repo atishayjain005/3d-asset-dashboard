@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useState, useRef, useMemo } from "react";
-import { Canvas, useLoader, useThree } from "@react-three/fiber";
+import { Canvas, useLoader } from "@react-three/fiber";
 import {
   OrbitControls,
   Html,
@@ -105,8 +105,6 @@ function OBJModel({ url, onLoad }) {
 }
 
 function Model({ url, type, onLoad }) {
-  const [error, setError] = useState(null);
-
   if (!url) {
     console.error("No URL provided for model loading.");
     return null;
@@ -118,62 +116,29 @@ function Model({ url, type, onLoad }) {
     onLoad?.();
   }
 
-  try {
-    return (
-      <Center scale={2}>
-        <Suspense fallback={
+  return (
+    <Center scale={2}>
+      <Suspense fallback={
+        <Html center>
+          <div className="flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-[#646cff] border-t-transparent rounded-full animate-spin" />
+          </div>
+        </Html>
+      }>
+        {type === "glb" || type === "gltf" ? (
+          <GLTFModel url={url} onLoad={onLoad} />
+        ) : type === "fbx" ? (
+          <FBXModel url={url} onLoad={onLoad} />
+        ) : type === "obj" ? (
+          <OBJModel url={url} onLoad={onLoad} />
+        ) : (
           <Html center>
-            <div className="flex items-center justify-center">
-              <div className="w-6 h-6 border-2 border-[#646cff] border-t-transparent rounded-full animate-spin" />
-            </div>
+            <p className="text-red-500">Unsupported model type: {type}</p>
           </Html>
-        }>
-          {error ? (
-            <Html center>
-              <p className="text-red-500">{error}</p>
-            </Html>
-          ) : type === "glb" || type === "gltf" ? (
-            <GLTFModel url={url} onLoad={onLoad} />
-          ) : type === "fbx" ? (
-            <FBXModel url={url} onLoad={onLoad} />
-          ) : type === "obj" ? (
-            <OBJModel url={url} onLoad={onLoad} />
-          ) : (
-            <Html center>
-              <p className="text-red-500">Unsupported model type: {type}</p>
-            </Html>
-          )}
-        </Suspense>
-      </Center>
-    );
-  } catch (error) {
-    console.error('Error loading model:', error);
-    setError('Error loading model');
-    onLoad?.();
-    return (
-      <Html center>
-        <p className="text-red-500">Error loading model</p>
-      </Html>
-    );
-  }
-}
-
-// Add a camera setup component
-function CameraSetup({ isThumbnail }) {
-  const { camera } = useThree();
-  
-  useEffect(() => {
-    if (isThumbnail) {
-      camera.position.set(400, 400, 400);
-      camera.fov = 20;
-    } else {
-      camera.position.set(400, 400, 400);
-      camera.fov = 45;
-    }
-    camera.updateProjectionMatrix();
-  }, [camera, isThumbnail]);
-  
-  return null;
+        )}
+      </Suspense>
+    </Center>
+  );
 }
 
 function ThreeDViewer({ 
@@ -203,7 +168,6 @@ function ThreeDViewer({
         powerPreference: "high-performance",
       }}
     >
-      <CameraSetup isThumbnail={isThumbnail} />
       <color attach="background" args={["#242424"]} />
       <ambientLight intensity={0.7} />
       <directionalLight intensity={1} position={[5, 5, 5]} castShadow />
@@ -241,9 +205,10 @@ function ThreeDViewer({
 
   // Cleanup WebGL context when component unmounts
   useEffect(() => {
+    const canvas = canvasRef.current;
     return () => {
-      if (canvasRef.current) {
-        const gl = canvasRef.current.getContext('webgl2') || canvasRef.current.getContext('webgl');
+      if (canvas) {
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
         if (gl) {
           const ext = gl.getExtension('WEBGL_lose_context');
           if (ext && !modelCache.has(url)) {
@@ -321,4 +286,3 @@ function ThreeDViewer({
 }
 
 export default ThreeDViewer;
-

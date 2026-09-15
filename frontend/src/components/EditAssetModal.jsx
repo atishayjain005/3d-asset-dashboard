@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '../config/api';
 
 function EditAssetModal({ asset, onClose, onSave }) {
   const [name, setName] = useState(asset.name || '');
@@ -15,7 +16,7 @@ function EditAssetModal({ asset, onClose, onSave }) {
     setError('');
     setSaving(true);
     try {
-      const res = await fetch(`/assets/${asset.id}`, {
+      const res = await fetch(apiUrl(`/assets/${asset.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

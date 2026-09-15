@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import Dashboard from "./components/Dashboard";
 import ThreeDViewer from "./components/ThreeDViewer";
 import EditAssetModal from "./components/EditAssetModal";
-
-const API_BASE_URL =
-  "https://3d-asset-dashboard-ugql.vercel.app" || "http://localhost:8080";
+import { apiUrl } from "./config/api";
 
 function App() {
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -24,7 +22,7 @@ function App() {
       }
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/assets`);
+      const response = await fetch(apiUrl("/assets"));
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -34,7 +32,7 @@ function App() {
       setAssets(data);
     } catch (err) {
       console.error("Failed to fetch assets:", err);
-      // setError("Failed to load assets. Please try again later.");
+      setError("Failed to load assets. Check the API connection and try again.");
     } finally {
       if (showLoading) {
         setIsLoading(false);
@@ -44,9 +42,38 @@ function App() {
     }
   };
 
-  // Initial fetch with loading indicator
   useEffect(() => {
-    fetchAssets(true);
+    let ignore = false;
+
+    const loadAssets = async () => {
+      try {
+        const response = await fetch(apiUrl("/assets"));
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!ignore) {
+          setAssets(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch assets:", err);
+        if (!ignore) {
+          setError("Failed to load assets. Check the API connection and try again.");
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadAssets();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   // Background sync without loading indicator

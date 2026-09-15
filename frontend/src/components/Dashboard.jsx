@@ -12,9 +12,7 @@ import {
 } from "react-icons/fi";
 import { FaEye, FaEdit, FaTrash, FaTags } from "react-icons/fa";
 import { BiFile } from "react-icons/bi";
-
-const API_BASE_URL =
-  "https://3d-asset-dashboard-ugql.vercel.app" || "http://localhost:8080";
+import { apiUrl } from "../config/api";
 
 // Spinner component with customizable message
 const Spinner = ({ message = "Loading assets..." }) => (
@@ -126,7 +124,7 @@ function Dashboard({
 
     try {
       setDeleteLoading(id);
-      const response = await fetch(`${API_BASE_URL}/assets/${id}`, {
+      const response = await fetch(apiUrl(`/assets/${id}`), {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
