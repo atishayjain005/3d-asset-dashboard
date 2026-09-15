@@ -8,27 +8,63 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
+const storageBucket = process.env.SUPABASE_STORAGE_BUCKET || "assets";
+const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const supabaseConfigured = Boolean(
+  process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+);
+const supabase = supabaseConfigured
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+  : null;
 
-// Configure CORS to allow your frontend domain
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://3d-asset-dashboard.vercel.app",
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("CORS_NOT_ALLOWED"));
+    },
   })
 );
 
 app.use(express.json());
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+app.get("/health", (req, res) => {
+  res.json({
+    ok: true,
+    storageBucket,
+    supabaseConfigured,
+  });
+});
+
+const requireSupabase = (req, res, next) => {
+  if (!supabaseConfigured || !supabase) {
+    return res.status(503).json({
+      error: "SUPABASE_NOT_CONFIGURED",
+      message: "Set SUPABASE_URL and SUPABASE_SERVICE_KEY before using assets.",
+    });
+  }
+
+  next();
+};
 
 // Initialize storage bucket
 const initBucket = async () => {
-  const { data: buckets } = await supabase.storage.listBuckets();
-  const assetsBucket = buckets?.find((bucket) => bucket.name === "assets");
+  if (!supabase) return;
+  const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+  if (listError) {
+    console.error("Error listing buckets:", listError);
+    return;
+  }
+  const assetsBucket = buckets?.find((bucket) => bucket.name === storageBucket);
   if (!assetsBucket) {
-    const { data, error } = await supabase.storage.createBucket("assets", {
+    const { error } = await supabase.storage.createBucket(storageBucket, {
       public: true,
       fileSizeLimit: 52428800, // 50MB in bytes
     });
@@ -54,7 +90,7 @@ const upload = multer({
 });
 
 // POST /assets - Upload a new 3D asset
-app.post("/assets", upload.single("file"), async (req, res, next) => {
+app.post("/assets", requireSupabase, upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) {
       throw new Error("FILE_MISSING");
@@ -64,9 +100,10 @@ app.post("/assets", upload.single("file"), async (req, res, next) => {
     const ext = file.originalname.split(".").pop().toLowerCase();
 
     // 1. Upload file to Supabase Storage
-    const filePath = `${Date.now()}_${file.originalname}`;
+    const safeFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = `${Date.now()}_${safeFileName}`;
     const { error: uploadError } = await supabase.storage
-      .from("assets")
+      .from(storageBucket)
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
         cacheControl: "3600",
@@ -77,7 +114,7 @@ app.post("/assets", upload.single("file"), async (req, res, next) => {
     }
 
     // 2. Construct public URL for the uploaded file
-    const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
+    const { data } = supabase.storage.from(storageBucket).getPublicUrl(filePath);
     const publicUrl = data.publicUrl;
 
     // 3. Insert metadata into Database
@@ -88,7 +125,12 @@ app.post("/assets", upload.single("file"), async (req, res, next) => {
         file_url: publicUrl,
         type: ext,
         size: file.size,
-        tags: tags ? tags.split(",").map((t) => t.trim()) : null,
+        tags: tags
+          ? tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : null,
       })
       .select()
       .single();
@@ -103,7 +145,7 @@ app.post("/assets", upload.single("file"), async (req, res, next) => {
 });
 
 // GET /assets - Fetch all assets
-app.get("/assets", async (req, res, next) => {
+app.get("/assets", requireSupabase, async (req, res, next) => {
   try {
     const { search, type } = req.query;
     let query = supabase.from("assets").select("*").order("uploaded_at", {
@@ -124,10 +166,23 @@ app.get("/assets", async (req, res, next) => {
 });
 
 // PUT /assets/:id - Update asset metadata
-app.put("/assets/:id", async (req, res, next) => {
+app.put("/assets/:id", requireSupabase, async (req, res, next) => {
   try {
     const assetId = req.params.id;
-    const updates = req.body;
+    const updates = {};
+    if (typeof req.body.name === "string") {
+      updates.name = req.body.name.trim();
+    }
+    if (Array.isArray(req.body.tags)) {
+      updates.tags = req.body.tags
+        .map((tag) => String(tag).trim())
+        .filter(Boolean);
+    }
+
+    if (!updates.name && !updates.tags) {
+      return res.status(400).json({ error: "NO_VALID_UPDATES" });
+    }
+
     const { data: updated, error } = await supabase
       .from("assets")
       .update(updates)
@@ -142,7 +197,7 @@ app.put("/assets/:id", async (req, res, next) => {
 });
 
 // DELETE /assets/:id - Delete an asset (file + record)
-app.delete("/assets/:id", async (req, res, next) => {
+app.delete("/assets/:id", requireSupabase, async (req, res, next) => {
   try {
     const assetId = req.params.id;
     const { data: asset, error: findError } = await supabase
@@ -155,11 +210,13 @@ app.delete("/assets/:id", async (req, res, next) => {
       return res.status(404).send("Asset not found");
     }
     const fileUrl = asset.file_url;
-    const pathInBucket = fileUrl.split(
-      "/storage/v1/object/public/assets/"
-    )[1];
+    const marker = `/storage/v1/object/public/${storageBucket}/`;
+    const pathInBucket = fileUrl.split(marker)[1];
+    if (!pathInBucket) {
+      return res.status(400).json({ error: "INVALID_FILE_URL" });
+    }
     const { error: removeError } = await supabase.storage
-      .from("assets")
+      .from(storageBucket)
       .remove([pathInBucket]);
     if (removeError) throw removeError;
     const { error: dbError } = await supabase
@@ -176,6 +233,9 @@ app.delete("/assets/:id", async (req, res, next) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err);
+  if (err.message === "CORS_NOT_ALLOWED") {
+    return res.status(403).json({ error: err.message });
+  }
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: err.code });
   } else if (
