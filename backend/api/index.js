@@ -232,10 +232,11 @@ app.delete("/assets/:id", requireSupabase, async (req, res, next) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err);
   if (err.message === "CORS_NOT_ALLOWED") {
     return res.status(403).json({ error: err.message });
   }
+
+  console.error(err);
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ error: err.code });
   } else if (
@@ -249,7 +250,7 @@ app.use((err, req, res, next) => {
 });
 
 // For local development only. When deployed on Vercel, Vercel will import the app.
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
   const PORT = process.env.PORT || 8080;
   app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
 }
