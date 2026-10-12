@@ -1,6 +1,5 @@
-import React, { useState, useCallback, Suspense } from "react";
+import React, { lazy, useState, useCallback, Suspense } from "react";
 import UploadForm from "./UploadForm";
-import ThreeDViewer from "./ThreeDViewer";
 import {
   FiSearch,
   FiFilter,
@@ -13,6 +12,8 @@ import {
 import { FaEye, FaEdit, FaTrash, FaTags } from "react-icons/fa";
 import { BiFile } from "react-icons/bi";
 import { apiUrl } from "../config/api";
+
+const ThreeDViewer = lazy(() => import("./ThreeDViewer"));
 
 // Spinner component with customizable message
 const Spinner = ({ message = "Loading assets..." }) => (

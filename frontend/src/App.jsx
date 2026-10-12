@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import Dashboard from "./components/Dashboard";
-import ThreeDViewer from "./components/ThreeDViewer";
 import EditAssetModal from "./components/EditAssetModal";
 import { apiUrl } from "./config/api";
 import { demoAssets } from "./data/demoAssets";
+
+const ThreeDViewer = lazy(() => import("./components/ThreeDViewer"));
 
 function App() {
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -149,7 +150,15 @@ function App() {
             isDemoMode={isDemoMode}
           />
           {selectedAsset && (
-            <ThreeDViewer asset={selectedAsset} onClose={handleClosePreview} />
+            <Suspense
+              fallback={
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 text-white">
+                  Loading 3D viewer...
+                </div>
+              }
+            >
+              <ThreeDViewer asset={selectedAsset} onClose={handleClosePreview} />
+            </Suspense>
           )}
           {editAsset && (
             <EditAssetModal
