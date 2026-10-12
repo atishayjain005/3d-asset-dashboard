@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import Dashboard from "./components/Dashboard";
-import ThreeDViewer from "./components/ThreeDViewer";
 import EditAssetModal from "./components/EditAssetModal";
+import { apiUrl } from "./config/api";
+import { demoAssets } from "./data/demoAssets";
 
-const API_BASE_URL =
-  "https://3d-asset-dashboard-ugql.vercel.app" || "http://localhost:8080";
+const ThreeDViewer = lazy(() => import("./components/ThreeDViewer"));
 
 function App() {
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -13,6 +13,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Fetch assets with loading state
   const fetchAssets = async (showLoading = true) => {
@@ -24,17 +25,25 @@ function App() {
       }
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/assets`);
+      const response = await fetch(apiUrl("/assets"));
 
       if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        if (response.status === 503 && body.error === "SUPABASE_NOT_CONFIGURED") {
+          setAssets(demoAssets);
+          setIsDemoMode(true);
+          return;
+        }
+
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       setAssets(data);
+      setIsDemoMode(false);
     } catch (err) {
       console.error("Failed to fetch assets:", err);
-      // setError("Failed to load assets. Please try again later.");
+      setError("Failed to load assets. Check the API connection and try again.");
     } finally {
       if (showLoading) {
         setIsLoading(false);
@@ -44,9 +53,48 @@ function App() {
     }
   };
 
-  // Initial fetch with loading indicator
   useEffect(() => {
-    fetchAssets(true);
+    let ignore = false;
+
+    const loadAssets = async () => {
+      try {
+        const response = await fetch(apiUrl("/assets"));
+
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          if (response.status === 503 && body.error === "SUPABASE_NOT_CONFIGURED") {
+            if (!ignore) {
+              setAssets(demoAssets);
+              setIsDemoMode(true);
+            }
+            return;
+          }
+
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!ignore) {
+          setAssets(data);
+          setIsDemoMode(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch assets:", err);
+        if (!ignore) {
+          setError("Failed to load assets. Check the API connection and try again.");
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadAssets();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   // Background sync without loading indicator
@@ -99,9 +147,18 @@ function App() {
             isLoading={isLoading}
             onRefresh={syncAssets}
             isSyncing={isSyncing}
+            isDemoMode={isDemoMode}
           />
           {selectedAsset && (
-            <ThreeDViewer asset={selectedAsset} onClose={handleClosePreview} />
+            <Suspense
+              fallback={
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 text-white">
+                  Loading 3D viewer...
+                </div>
+              }
+            >
+              <ThreeDViewer asset={selectedAsset} onClose={handleClosePreview} />
+            </Suspense>
           )}
           {editAsset && (
             <EditAssetModal
