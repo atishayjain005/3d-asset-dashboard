@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { apiUrl } from '../config/api';
+import {
+  MAX_UPLOAD_BYTES,
+  getAssetType,
+  isSupportedModelFile,
+  isWithinUploadLimit,
+  supportedModelLabel,
+} from '../config/assets';
+
+const formatFileSize = (bytes) => {
+  if (!bytes && bytes !== 0) return 'Unknown size';
+  const units = ['Bytes', 'KB', 'MB', 'GB'];
+  const unitIndex = Math.min(
+    Math.floor(Math.log(Math.max(bytes, 1)) / Math.log(1024)),
+    units.length - 1
+  );
+  return `${(bytes / Math.pow(1024, unitIndex)).toFixed(unitIndex ? 2 : 0)} ${units[unitIndex]}`;
+};
 
 function UploadForm({ onUploadSuccess }) {
   const [file, setFile] = useState(null);
@@ -15,6 +32,14 @@ function UploadForm({ onUploadSuccess }) {
     e.preventDefault();
     if (!file) {
       setError('Please select a file.');
+      return;
+    }
+    if (!isSupportedModelFile(file)) {
+      setError(`Please upload one of these formats: ${supportedModelLabel}.`);
+      return;
+    }
+    if (!isWithinUploadLimit(file)) {
+      setError(`File must be ${formatFileSize(MAX_UPLOAD_BYTES)} or smaller.`);
       return;
     }
     setError('');
@@ -56,22 +81,32 @@ function UploadForm({ onUploadSuccess }) {
     setIsDragging(false);
   };
 
+  const chooseFile = (selectedFile) => {
+    if (!selectedFile) return;
+    if (!isSupportedModelFile(selectedFile)) {
+      setFile(null);
+      setError(`Please upload one of these formats: ${supportedModelLabel}.`);
+      return;
+    }
+    if (!isWithinUploadLimit(selectedFile)) {
+      setFile(null);
+      setError(`File must be ${formatFileSize(MAX_UPLOAD_BYTES)} or smaller.`);
+      return;
+    }
+
+    setError('');
+    setFile(selectedFile);
+    if (!name) {
+      setName(selectedFile.name.replace(/\.[^.]+$/, ''));
+    }
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const droppedFile = e.dataTransfer.files[0];
-      const fileExtension = droppedFile.name.split('.').pop().toLowerCase();
-      
-      if (['glb', 'fbx', 'obj'].includes(fileExtension)) {
-        setFile(droppedFile);
-        if (!name) {
-          setName(droppedFile.name.split('.')[0]);
-        }
-      } else {
-        setError('Please upload a .glb, .fbx, or .obj file');
-      }
+      chooseFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -100,7 +135,9 @@ function UploadForm({ onUploadSuccess }) {
               </div>
               <div className="text-left">
                 <p className="text-sm text-white truncate">{file.name}</p>
-                <p className="text-xs text-gray-400">{(file.size / 1024).toFixed(2)} KB</p>
+                <p className="text-xs text-gray-400">
+                  {getAssetType(file.name).toUpperCase()} · {formatFileSize(file.size)}
+                </p>
               </div>
             </div>
             <button 
@@ -119,21 +156,17 @@ function UploadForm({ onUploadSuccess }) {
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
             <p className="text-gray-300 mb-2">Drag & drop a 3D file here</p>
-            <p className="text-gray-500 text-sm mb-3">Supports GLB, FBX, OBJ</p>
+            <p className="text-gray-500 text-sm mb-3">
+              Supports {supportedModelLabel} up to {formatFileSize(MAX_UPLOAD_BYTES)}
+            </p>
             <label className="bg-[#333333] hover:bg-[#444444] text-white py-2 px-4 rounded cursor-pointer inline-block transition-colors">
               Browse Files
               <input 
                 type="file" 
                 className="hidden"
-                accept=".glb,.fbx,.obj"
+                accept=".glb,.gltf,.fbx,.obj"
                 onChange={e => {
-                  const selectedFile = e.target.files[0];
-                  if (selectedFile) {
-                    setFile(selectedFile);
-                    if (!name) {
-                      setName(selectedFile.name.split('.')[0]);
-                    }
-                  }
+                  chooseFile(e.target.files[0]);
                 }}
               />
             </label>

@@ -12,6 +12,7 @@ import {
 import { FaEye, FaEdit, FaTrash, FaTags } from "react-icons/fa";
 import { BiFile } from "react-icons/bi";
 import { apiUrl } from "../config/api";
+import { SUPPORTED_MODEL_TYPES } from "../config/assets";
 
 const ThreeDViewer = lazy(() => import("./ThreeDViewer"));
 
@@ -407,9 +408,7 @@ function Dashboard({
                   <div className="relative">
                     {asset.file_url &&
                     asset.type &&
-                    ["glb", "gltf", "fbx", "obj"].includes(
-                      asset.type.toLowerCase()
-                    ) ? (
+                    SUPPORTED_MODEL_TYPES.includes(asset.type.toLowerCase()) ? (
                       <Suspense
                         fallback={
                           <div className="w-full h-32 bg-[#242424] rounded-t-lg overflow-hidden flex items-center justify-center">
