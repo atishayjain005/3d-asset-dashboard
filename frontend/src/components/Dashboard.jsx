@@ -29,6 +29,7 @@ function Dashboard({
   onEdit,
   isLoading,
   onRefresh,
+  isDemoMode = false,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -120,6 +121,7 @@ function Dashboard({
   });
 
   const deleteAsset = async (id) => {
+    if (isDemoMode) return;
     if (!window.confirm("Are you sure you want to delete this asset?")) return;
 
     try {
@@ -189,6 +191,14 @@ function Dashboard({
 
       <div className="flex flex-col md:flex-row w-full flex-1">
         <div className="w-full md:w-3/4 p-6 overflow-auto overflow-x-hidden">
+          {isDemoMode && (
+            <div className="mb-6 rounded-lg border border-[#646cff]/40 bg-[#646cff]/10 px-4 py-3 text-sm text-indigo-100">
+              Demo catalogue loaded because Supabase is not configured. Preview
+              and filtering are available; upload, edit, and delete actions are
+              disabled until backend credentials are added.
+            </div>
+          )}
+
           {/* Search and Filter Bar */}
           <div className="flex flex-col md:flex-row gap-3 mb-6">
             <div className="relative flex-grow">
@@ -394,7 +404,8 @@ function Dashboard({
                   className="group bg-[#1a1a1a] rounded-lg overflow-hidden border border-[#333333] hover:border-[#444444] transition-all duration-200 shadow-md hover:shadow-lg hover:shadow-black/30"
                 >
                   <div className="relative">
-                    {asset.type &&
+                    {asset.file_url &&
+                    asset.type &&
                     ["glb", "gltf", "fbx", "obj"].includes(
                       asset.type.toLowerCase()
                     ) ? (
@@ -473,6 +484,8 @@ function Dashboard({
                     </button>
                     <button
                       onClick={() => onEdit(asset)}
+                      disabled={isDemoMode}
+                      title={isDemoMode ? "Editing is disabled in demo mode" : "Edit asset"}
                       className="py-2.5 px-0 text-sm font-medium text-green-400 bg-[#1a1a1a] hover:bg-[#242424] transition-colors border-l border-r border-0 border-l-[#333333] border-r-[#333333] hover:border-r-[#333333] hover:border-l-[#333333] flex items-center justify-center focus:outline-none focus-visible:bg-[#242424] rounded-none"
                     >
                       <FaEdit className="mr-1.5" />
@@ -480,7 +493,8 @@ function Dashboard({
                     </button>
                     <button
                       onClick={() => deleteAsset(asset.id)}
-                      disabled={deleteLoading === asset.id}
+                      disabled={deleteLoading === asset.id || isDemoMode}
+                      title={isDemoMode ? "Deleting is disabled in demo mode" : "Delete asset"}
                       className="py-2.5 px-0 text-sm font-medium text-red-400 bg-[#1a1a1a] hover:bg-[#242424] transition-colors border-0 rounded-none flex items-center justify-center focus:outline-none focus-visible:bg-[#242424] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {deleteLoading === asset.id ? (
@@ -498,26 +512,34 @@ function Dashboard({
         </div>
 
         <div className="w-full md:w-1/4 bg-[#1a1a1a] p-6 border-l border-[#333333]">
-          <UploadForm
-            onUploadSuccess={(newAsset) => {
-              // Optimistically update the UI
-              const now = new Date().toISOString();
-              const assetWithDate = {
-                ...newAsset,
-                uploaded_at: now,
-                created_at: now,
-              };
-              setAssets((prev) => [assetWithDate, ...prev]);
+          {isDemoMode ? (
+            <div className="rounded-lg border border-[#333333] bg-[#242424] p-4 text-sm text-gray-300">
+              <h2 className="mb-2 text-lg font-semibold text-white">
+                Demo Mode
+              </h2>
+              <p>
+                Add Supabase credentials to enable uploads and persistent asset
+                management.
+              </p>
+            </div>
+          ) : (
+            <UploadForm
+              onUploadSuccess={(newAsset) => {
+                const now = new Date().toISOString();
+                const assetWithDate = {
+                  ...newAsset,
+                  uploaded_at: now,
+                  created_at: now,
+                };
+                setAssets((prev) => [assetWithDate, ...prev]);
 
-              // Sync with server in the background
-              onRefresh().catch((error) => {
-                console.error("Failed to sync with server:", error);
-                // If sync fails, keep the optimistic update
-                // The next refresh or page load will fix any inconsistencies
-              });
-            }}
-            disabled={isLoading}
-          />
+                onRefresh().catch((error) => {
+                  console.error("Failed to sync with server:", error);
+                });
+              }}
+              disabled={isLoading}
+            />
+          )}
         </div>
       </div>
     </div>

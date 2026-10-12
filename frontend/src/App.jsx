@@ -3,6 +3,7 @@ import Dashboard from "./components/Dashboard";
 import ThreeDViewer from "./components/ThreeDViewer";
 import EditAssetModal from "./components/EditAssetModal";
 import { apiUrl } from "./config/api";
+import { demoAssets } from "./data/demoAssets";
 
 function App() {
   const [selectedAsset, setSelectedAsset] = useState(null);
@@ -11,6 +12,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Fetch assets with loading state
   const fetchAssets = async (showLoading = true) => {
@@ -25,11 +27,19 @@ function App() {
       const response = await fetch(apiUrl("/assets"));
 
       if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        if (response.status === 503 && body.error === "SUPABASE_NOT_CONFIGURED") {
+          setAssets(demoAssets);
+          setIsDemoMode(true);
+          return;
+        }
+
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
       setAssets(data);
+      setIsDemoMode(false);
     } catch (err) {
       console.error("Failed to fetch assets:", err);
       setError("Failed to load assets. Check the API connection and try again.");
@@ -50,12 +60,22 @@ function App() {
         const response = await fetch(apiUrl("/assets"));
 
         if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          if (response.status === 503 && body.error === "SUPABASE_NOT_CONFIGURED") {
+            if (!ignore) {
+              setAssets(demoAssets);
+              setIsDemoMode(true);
+            }
+            return;
+          }
+
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         if (!ignore) {
           setAssets(data);
+          setIsDemoMode(false);
         }
       } catch (err) {
         console.error("Failed to fetch assets:", err);
@@ -126,6 +146,7 @@ function App() {
             isLoading={isLoading}
             onRefresh={syncAssets}
             isSyncing={isSyncing}
+            isDemoMode={isDemoMode}
           />
           {selectedAsset && (
             <ThreeDViewer asset={selectedAsset} onClose={handleClosePreview} />
