@@ -50,3 +50,13 @@ Self-generated idea:
 - Deployment requirement: frontend can deploy in demo mode without secrets;
   persistent upload/edit/delete requires Supabase env vars and the schema in
   `docs/supabase-schema.sql`.
+
+Validation:
+
+- Backend: `npm test`, `node --check api/index.js`, `node --check
+  api/assetValidation.js`, `npm audit --audit-level=high`.
+- Frontend: `npm run lint`, `npm run build`.
+- Frontend audit blocker: `npm audit --audit-level=high` still reports
+  Tailwind 3 transitive `braces`/`postcss-selector-parser` advisories. The
+  automated fix path requires Tailwind 4, so it is intentionally left as a
+  follow-up migration rather than forced into this safe pass.
