@@ -4,6 +4,12 @@ import multer from "multer";
 import cors from "cors";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import {
+  normalizeAssetName,
+  normalizeTags,
+  sanitizeFileName,
+  validateAssetType,
+} from "./assetValidation.js";
 
 dotenv.config();
 
@@ -79,9 +85,7 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB limit
   fileFilter: (req, file, cb) => {
-    // Only allow .glb, .fbx, .obj file types
-    const ext = file.originalname.split(".").pop().toLowerCase();
-    if (["glb", "gltf", "fbx", "obj"].includes(ext)) {
+    if (validateAssetType(file.originalname)) {
       cb(null, true);
     } else {
       cb(new Error("INVALID_TYPE"));
@@ -97,10 +101,15 @@ app.post("/assets", requireSupabase, upload.single("file"), async (req, res, nex
     }
     const file = req.file;
     const { name, tags = "" } = req.body;
-    const ext = file.originalname.split(".").pop().toLowerCase();
+    const ext = validateAssetType(file.originalname);
+    const assetName = normalizeAssetName(
+      name,
+      file.originalname.replace(/\.[^.]+$/, "")
+    );
+    const normalizedTags = normalizeTags(tags);
 
     // 1. Upload file to Supabase Storage
-    const safeFileName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const safeFileName = sanitizeFileName(file.originalname);
     const filePath = `${Date.now()}_${safeFileName}`;
     const { error: uploadError } = await supabase.storage
       .from(storageBucket)
@@ -121,16 +130,11 @@ app.post("/assets", requireSupabase, upload.single("file"), async (req, res, nex
     const { error: dbError, data: newEntry } = await supabase
       .from("assets")
       .insert({
-        name: name,
+        name: assetName,
         file_url: publicUrl,
         type: ext,
         size: file.size,
-        tags: tags
-          ? tags
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean)
-          : null,
+        tags: normalizedTags.length ? normalizedTags : null,
       })
       .select()
       .single();
@@ -171,12 +175,10 @@ app.put("/assets/:id", requireSupabase, async (req, res, next) => {
     const assetId = req.params.id;
     const updates = {};
     if (typeof req.body.name === "string") {
-      updates.name = req.body.name.trim();
+      updates.name = normalizeAssetName(req.body.name);
     }
     if (Array.isArray(req.body.tags)) {
-      updates.tags = req.body.tags
-        .map((tag) => String(tag).trim())
-        .filter(Boolean);
+      updates.tags = normalizeTags(req.body.tags);
     }
 
     if (!updates.name && !updates.tags) {
