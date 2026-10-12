@@ -27,3 +27,26 @@ Known follow-ups:
 - Add Supabase schema SQL and seed/demo data for reviewers who do not have a Supabase project.
 - Consider code-splitting the frontend 3D viewer bundle; the production build is valid but still reports a large chunk warning.
 - Add authenticated admin controls before presenting this as a public multi-user asset manager.
+
+## 2026-10-12 portfolio readiness pass
+
+Self-generated idea:
+
+- Repository: `atishayjain005/3d-asset-dashboard`
+- Problem: reviewers could land on an empty or broken dashboard when Supabase
+  credentials are intentionally absent, and setup still required guessing the
+  database schema.
+- Proposed improvement: add read-only demo data, split the heavy 3D viewer bundle,
+  align frontend/backend upload validation, and document the Supabase schema.
+- Reason: the project should demonstrate product polish without exposing secrets
+  or requiring paid infrastructure.
+- Expected impact: stronger portfolio first impression, clearer setup path, and
+  fewer invalid upload failures.
+- Complexity: medium.
+- Risk: low; changes are additive, reversible, and keep persistent writes behind
+  existing Supabase configuration.
+- Recommendation: merge after validation; deploy only after rotating any
+  historical Supabase service key and setting fresh environment variables.
+- Deployment requirement: frontend can deploy in demo mode without secrets;
+  persistent upload/edit/delete requires Supabase env vars and the schema in
+  `docs/supabase-schema.sql`.

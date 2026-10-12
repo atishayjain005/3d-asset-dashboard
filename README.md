@@ -69,6 +69,9 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
 
 - Node.js 22 or newer for the backend Supabase client dependency tree.
 - A Supabase project with an `assets` table and a public storage bucket.
+- Optional for review-only demos: leave Supabase unset and the frontend will
+  show a read-only sample catalogue when the backend returns
+  `SUPABASE_NOT_CONFIGURED`.
 
 ### Frontend Setup
 
@@ -123,6 +126,12 @@ A full-stack 3D Asset Dashboard for managing and previewing 3D assets. This proj
    SUPABASE_STORAGE_BUCKET="assets"
    ```
 
+4. **Create the Supabase schema:**
+
+   Run [`docs/supabase-schema.sql`](docs/supabase-schema.sql) in the Supabase SQL
+   editor, then create a public Storage bucket named `assets` if it does not
+   already exist.
+
 4. **For local development, run the backend:**
 
    ```bash
@@ -142,6 +151,10 @@ SUPABASE_STORAGE_BUCKET="assets"
 ```
 
 The backend also exposes `GET /health`, which reports whether Supabase credentials are configured. Asset routes return `503 SUPABASE_NOT_CONFIGURED` until the Supabase environment is present.
+
+When the frontend receives that setup response, it loads a read-only demo
+catalogue so reviewers can still inspect filtering, layout, and preview affordances
+without requiring private Supabase credentials.
 
 ## Validation
 
@@ -213,4 +226,3 @@ npm audit --audit-level=high
 ## Project Notes
 
 See [`docs/improvement-log.md`](docs/improvement-log.md) for the current hardening record, validation history, and follow-up backlog.
-
